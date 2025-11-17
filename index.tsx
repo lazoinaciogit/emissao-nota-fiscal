@@ -4,12 +4,19 @@ const cepInput = document.getElementById('cep') as HTMLInputElement;
 const shareButton = document.getElementById('share-button') as HTMLButtonElement;
 const toast = document.getElementById('toast') as HTMLDivElement;
 const toastMessage = document.getElementById('toast-message') as HTMLParagraphElement;
+const valorInput = document.getElementById('valor') as HTMLInputElement;
+const valorButtons = document.querySelectorAll('.valor-btn') as NodeListOf<HTMLButtonElement>;
+
 
 // --- MÁSCARAS DE INPUT ---
 const applyMask = (input: HTMLInputElement, maskFunction: (value: string) => string) => {
     input.addEventListener('input', (e) => {
         const target = e.target as HTMLInputElement;
-        target.value = maskFunction(target.value);
+        const originalValue = target.value;
+        const maskedValue = maskFunction(originalValue);
+        if (originalValue !== maskedValue) {
+           target.value = maskedValue;
+        }
     });
 };
 
@@ -29,8 +36,45 @@ const cepMask = (value: string): string => {
         .slice(0, 9);
 };
 
+const currencyMask = (value: string): string => {
+    if (!value) return '';
+    let v = value.replace(/\D/g, '');
+    if (v.length === 0) return '';
+    
+    // Treat the input as cents
+    const num = parseInt(v, 10) / 100;
+
+    return new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(num);
+};
+
 applyMask(cpfInput, cpfMask);
 applyMask(cepInput, cepMask);
+applyMask(valorInput, currencyMask);
+
+// --- LÓGICA DO VALOR ---
+valorButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const value = button.dataset.value || '';
+        valorInput.value = value;
+        // Trigger input event to update active states
+        valorInput.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+});
+
+valorInput.addEventListener('input', () => {
+    const currentValue = valorInput.value;
+    valorButtons.forEach(btn => {
+        if (btn.dataset.value === currentValue) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+});
+
 
 // --- BUSCA DE CEP ---
 const clearAddressForm = () => {
